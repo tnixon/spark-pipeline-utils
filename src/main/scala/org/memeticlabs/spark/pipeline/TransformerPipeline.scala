@@ -28,56 +28,44 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 	* Transformer-only pipelines (ie. a Pipeline that
 	* acts like a Transformer, not an Estimator)
 	*/
-class TransformerPipeline(override val uid: String)
+class TransformerPipeline( override val uid: String )
 	extends Transformer
 {
-	def this() = this( Identifiable.randomUID( "TransformerPipeline" ) )
+	def this( ) = this( Identifiable.randomUID( "TransformerPipeline" ) )
 
-	/**
-		* @group param
-		*/
+	/** @group param */
 	val stages: Param[Array[Transformer]] = new Param( this, "stages", "stages of the pipeline" )
 
-	/**
-		* @group setParam
-		* @param value
-		* @return
-		*/
-	def setStages(value: Array[Transformer]): this.type =
-	{
+	/** @group setParam */
+	def setStages( value: Array[Transformer] ): TransformerPipeline.this.type =
 		set( stages, value.asInstanceOf[Array[Transformer]] )
-		this
-	}
 
-	/**
-		* @group getParam
-		* @return
-		*/
+	/** @group getParam */
 	def getStages: Array[Transformer] = $( stages ).clone()
 
-	override def copy(extra: ParamMap): TransformerPipeline =
+	override def copy( extra: ParamMap ): TransformerPipeline =
 	{
 		val map = extractParamMap( extra )
 		val newStages = map( stages ).map( _.copy( extra ) )
 		new TransformerPipeline().setStages( newStages )
 	}
 
-	override def transformSchema(schema: StructType): StructType =
+	override def transformSchema( schema: StructType ): StructType =
 	{
 		val theStages = $( stages )
-		require( theStages.toSet.size == theStages.length, s"${uid}: Cannot have duplicate components in a pipeline." )
-		theStages.foldLeft( schema )( (cur, stage) => stage.transformSchema( cur ) )
+		require( theStages.toSet.size == theStages.length, s"$uid: Cannot have duplicate components in a pipeline." )
+		theStages.foldLeft( schema )( ( cur, stage ) => stage.transformSchema( cur ) )
 	}
 
-	override def transform(dataset: Dataset[_]): DataFrame =
+	override def transform( dataset: Dataset[_] ): DataFrame =
 	{
 		transformSchema( dataset.schema, logging = true )
-		$( stages ).foldLeft( dataset.toDF )( (cur, transformer) => transformer.transform( cur ) )
+		$( stages ).foldLeft( dataset.toDF )( ( cur, transformer ) => transformer.transform( cur ) )
 	}
 }
 
 object TransformerPipeline
 {
-	def asPipeline(transformers: Array[Transformer]): TransformerPipeline =
+	def apply( transformers: Array[Transformer] ): TransformerPipeline =
 		new TransformerPipeline().setStages( transformers )
 }

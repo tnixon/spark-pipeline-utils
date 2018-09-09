@@ -27,7 +27,6 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 	* @param uid Unique ID for this transformer
 	* @tparam IN  Input data type
 	* @tparam OUT Output data type
-	* @tparam T   This transformer type
 	*/
 abstract class ExplodingDataSetTransformer[IN, OUT]( uid: String )
 	extends UnarySparkTransformerWrapper[IN, Seq[OUT]]( uid )

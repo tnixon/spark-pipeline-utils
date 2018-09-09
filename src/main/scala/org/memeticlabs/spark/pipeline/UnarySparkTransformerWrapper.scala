@@ -26,12 +26,11 @@ import org.apache.spark.sql.types.DataType
 	* @param uid Unique ID for this transformer
 	* @tparam IN  Input data type
 	* @tparam OUT Output data type
-	* @tparam T   This transformer type
 	*/
 abstract class UnarySparkTransformerWrapper[IN, OUT]( override val uid: String )
 	extends UnaryTransformer[IN, OUT, UnarySparkTransformerWrapper[IN, OUT]] with SparkTransformerWrapper[IN, OUT]
 {
-	override protected def createTransformFunc: (IN) => OUT = tx.transform
+	override protected def createTransformFunc: IN => OUT = tx.transform
 }
 
 object UnarySparkTransformerWrapper

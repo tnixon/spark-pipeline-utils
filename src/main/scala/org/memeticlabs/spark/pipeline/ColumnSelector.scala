@@ -26,9 +26,9 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 /**
 	* A collection of Transformers that select/drop specified columns
 	*/
-abstract class AbstractColumnSelector(override val uid: String) extends Transformer
+abstract class AbstractColumnSelector( override val uid: String ) extends Transformer
 {
-	override def copy(extra: ParamMap): Transformer = defaultCopy( extra )
+	override def copy( extra: ParamMap ): Transformer = defaultCopy( extra )
 
 	// Params
 
@@ -36,29 +36,29 @@ abstract class AbstractColumnSelector(override val uid: String) extends Transfor
 	val colNames = new Param[Array[String]]( this, "colNames", "Names of columns" )
 
 	/** @group getParam */
-	def getColNames = $( colNames )
+	def getColNames: Array[String] = $( colNames )
 
 	/** @group setParam */
-	def setColNames(cols: Array[String]) = set( colNames, cols )
+	def setColNames( cols: Array[String] ): AbstractColumnSelector.this.type = set( colNames, cols )
 }
 
 /**
 	* Transformer that will select out specified columns
 	*
-	* @param uid
+	* @param uid unique ID of this transformer
 	*/
-class ColumnSelector(uid: String) extends AbstractColumnSelector( uid )
+class ColumnSelector( uid: String ) extends AbstractColumnSelector( uid )
 {
-	def this() = this( Identifiable.randomUID( "ColumnSelector" ) )
+	def this( ) = this( Identifiable.randomUID( "ColumnSelector" ) )
 
-	override def transformSchema(schema: StructType): StructType =
+	override def transformSchema( schema: StructType ): StructType =
 	{
 		$( colNames ).foreach( col => require( schema.fieldNames.contains( col ),
-		                                       s"The column ${col} is not present!" ) )
+		                                       s"The column $col is not present!" ) )
 		StructType( schema.filter( col => $( colNames ).contains( col.name ) ) )
 	}
 
-	override def transform(dataset: Dataset[_]): DataFrame =
+	override def transform( dataset: Dataset[_] ): DataFrame =
 	{
 		transformSchema( dataset.schema, logging = true )
 		val cols = $( colNames ).map( col => dataset( col ) )
@@ -69,22 +69,22 @@ class ColumnSelector(uid: String) extends AbstractColumnSelector( uid )
 /**
 	* Transformer that will drop specified columns
 	*
-	* @param uid
+	* @param uid unique ID of this transformer
 	*/
-class ColumnDropper(uid: String) extends AbstractColumnSelector( uid )
+class ColumnDropper( uid: String ) extends AbstractColumnSelector( uid )
 {
-	def this() = this( Identifiable.randomUID( "ColumnDropper" ) )
+	def this( ) = this( Identifiable.randomUID( "ColumnDropper" ) )
 
-	override def transformSchema(schema: StructType): StructType =
+	override def transformSchema( schema: StructType ): StructType =
 	{
 		$( colNames ).foreach( col => require( schema.fieldNames.contains( col ),
-		                                       s"The column ${col} is not present!" ) )
+		                                       s"The column $col is not present!" ) )
 		StructType( schema.filterNot( col => $( colNames ).contains( col.name ) ) )
 	}
 
-	override def transform(dataset: Dataset[_]): DataFrame =
+	override def transform( dataset: Dataset[_] ): DataFrame =
 	{
 		transformSchema( dataset.schema, logging = true )
-		$( colNames ).foldLeft( dataset.toDF )( (cur, col) => cur.drop( col ) )
+		$( colNames ).foldLeft( dataset.toDF )( ( cur, col ) => cur.drop( col ) )
 	}
 }

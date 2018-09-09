@@ -26,18 +26,18 @@ import org.apache.spark.sql.{Column, DataFrame, Dataset}
 /**
 	* A simple type for organizing aggregators and their corresponding output types
 	*/
-case class AggregatorMapping(output: StructField, aggregator: Column)
+case class AggregatorMapping( output: StructField, aggregator: Column )
 
 /**
 	* A Pipeline component that enables a sequence of AggregationTransformers
 	*
-	* @param uid
+	* @param uid unique ID of this Transformer
 	*/
-class AggregationPipeline(override val uid: String) extends Transformer
+class AggregationPipeline( override val uid: String ) extends Transformer
 {
-	def this() = this( Identifiable.randomUID( "AggregationPipeline" ) )
+	def this( ) = this( Identifiable.randomUID( "AggregationPipeline" ) )
 
-	override def copy(extra: ParamMap): Transformer = defaultCopy( extra )
+	override def copy( extra: ParamMap ): Transformer = defaultCopy( extra )
 
 	/** Params */
 
@@ -51,29 +51,29 @@ class AggregationPipeline(override val uid: String) extends Transformer
 	setDefault( aggrStages, Seq() )
 
 	/** @group getParam */
-	final def getGroupCols = $( groupCols )
+	final def getGroupCols: Seq[String] = $( groupCols )
 
 	/** @group getParam */
-	final def getAggrStages = $( aggrStages )
+	final def getAggrStages: Seq[AggregationTransformer] = $( aggrStages )
 
 	/** @group setParam */
-	final def setGroupCols(values: Seq[String]) = set( groupCols, values )
+	final def setGroupCols( values: Seq[String] ): AggregationPipeline.this.type = set( groupCols, values )
 
 	/** @group setParam */
-	final def setAggrStages(values: Seq[AggregationTransformer]): AggregationPipeline =
+	final def setAggrStages( values: Seq[AggregationTransformer] ): AggregationPipeline =
 		set( aggrStages, values )
 
 	/** Transform */
 
-	override def transformSchema(schema: StructType): StructType =
+	override def transformSchema( schema: StructType ): StructType =
 	{
 		// validate the parameters
-		require( $( groupCols ) != null && $( groupCols ).size > 0, "groupCols must be set!" )
-		require( $( aggrStages ) != null && $( aggrStages ).size > 0, "measureCols must be set!" )
+		require( $( groupCols ) != null && $( groupCols ).nonEmpty, "groupCols must be set!" )
+		require( $( aggrStages ) != null && $( aggrStages ).nonEmpty, "measureCols must be set!" )
 
 		// validate the schema
 		$( groupCols ).foreach( col => require( schema.fieldNames.contains( col ),
-		                                        s"${uid}: Grouping column ${col} does not exist!" ) )
+		                                        s"$uid: Grouping column $col does not exist!" ) )
 
 		// start with the grouping columns
 		val grpCols = schema.fields.filter( col => $( groupCols ).contains( col.name ) )
@@ -83,7 +83,7 @@ class AggregationPipeline(override val uid: String) extends Transformer
 		StructType( grpCols ++ outputCols )
 	}
 
-	override def transform(ds: Dataset[_]): DataFrame =
+	override def transform( ds: Dataset[_] ): DataFrame =
 	{
 		// transform the schema
 		transformSchema( ds.schema, logging = true )
@@ -93,7 +93,7 @@ class AggregationPipeline(override val uid: String) extends Transformer
 		val aggCols = $( aggrStages ).map( _.toColumn( ds ) )
 		// and apply the aggregations
 		aggCols.size match {
-			case 1 => gds.agg( aggCols( 0 ) )
+			case 1 => gds.agg( aggCols.head )
 			case _ => gds.agg( aggCols.head, aggCols.tail: _* )
 		}
 	}
@@ -104,15 +104,15 @@ class AggregationPipeline(override val uid: String) extends Transformer
 	*/
 object AggregationPipeline
 {
-	def asPipeline(groupBy: Seq[String], aggregators: Seq[AggregationTransformer]): AggregationPipeline =
+	def apply( groupBy: Seq[String], aggregators: Seq[AggregationTransformer] ): AggregationPipeline =
 		new AggregationPipeline().setGroupCols( groupBy ).setAggrStages( aggregators )
 
-	def asPipeline(groupBy: String, aggregators: Seq[AggregationTransformer]): AggregationPipeline =
-		asPipeline( Seq( groupBy ), aggregators )
+	def apply( groupBy: String, aggregators: Seq[AggregationTransformer] ): AggregationPipeline =
+		apply( Seq( groupBy ), aggregators )
 
-	def asPipeline(groupBy: Seq[String], aggregator: AggregationTransformer): AggregationPipeline =
-		asPipeline( groupBy, Seq( aggregator ) )
+	def apply( groupBy: Seq[String], aggregator: AggregationTransformer ): AggregationPipeline =
+		apply( groupBy, Seq( aggregator ) )
 
-	def asPipeline(groupBy: String, aggregator: AggregationTransformer): AggregationPipeline =
-		asPipeline( Seq( groupBy ), Seq( aggregator ) )
+	def apply( groupBy: String, aggregator: AggregationTransformer ): AggregationPipeline =
+		apply( Seq( groupBy ), Seq( aggregator ) )
 }

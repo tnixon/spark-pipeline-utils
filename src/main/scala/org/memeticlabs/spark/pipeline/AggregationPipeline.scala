@@ -35,7 +35,7 @@ case class AggregatorMapping( output: StructField, aggregator: Column )
 	*/
 class AggregationPipeline( override val uid: String ) extends Transformer
 {
-	def this() = this( Identifiable.randomUID( "AggregationPipeline" ) )
+	def this( ) = this( Identifiable.randomUID( "AggregationPipeline" ) )
 
 	override def copy( extra: ParamMap ): Transformer = defaultCopy( extra )
 

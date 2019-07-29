@@ -86,8 +86,10 @@ abstract class AggregationTransformer( override val uid: String ) extends Pipeli
 		// make sure we have our input columns!
 		$( inputCols ).foreach( col => require( schema.fieldNames.contains( col ),
 		                                        s"$uid: Input column $col does not exist!" ) )
-		// make sure the output column is not already defined!
-		require( !schema.fieldNames.contains( $( outputCol ) ),
+		// make sure the output column is not already defined
+		// (or that it's part of the input - so it's getting re-purposed)
+		require( !schema.fieldNames.contains( $( outputCol ) ) ||
+		         $(inputCols).contains($(outputCol)),
 		         s"$uid: Table already contains output column ${$( outputCol )}!" )
 		// in an aggregation, we're only going to end up with the specified output columns
 		StructType( Seq( StructField( $( outputCol ), outputDataType ) ) )
@@ -155,7 +157,8 @@ object AggregationTransformer
 			override def aggregationFunction: Seq[Column] => Column = udaf.apply
 
 			override def outputDataType: DataType = udaf.dataType
-		}
+		}.setInputCols( inputCols )
+			.setOutputCol( outputCol )
 
 	/**
 		*

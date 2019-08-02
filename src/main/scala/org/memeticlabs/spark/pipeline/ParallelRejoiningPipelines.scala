@@ -20,6 +20,7 @@ package org.memeticlabs.spark.pipeline
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.sql.catalyst.plans.{Inner, JoinType}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Dataset}
 
@@ -62,6 +63,23 @@ class ParallelRejoiningPipelines(override val uid: String)
 
 	/** @group setParam */
 	final def setJoinCols( cols: Seq[String] ): ParallelRejoiningPipelines.this.type = set( joinCols, cols )
+
+	/** @group param */
+	final val joinType = new Param[JoinType]( this,
+	                                          "joinType",
+	                                          "Type of join to perform between tables" )
+	setDefault( joinType, Inner )
+
+	/** @group getParam */
+	final def getJoinType: JoinType = $(joinType)
+
+	/** @group setParam */
+	final def setJoinType( value: JoinType ): ParallelRejoiningPipelines.this.type =
+		set( joinType, value )
+
+	/** @group setParam */
+	final def setJoinType( value: String ): ParallelRejoiningPipelines.this.type =
+		setJoinType( JoinType(value) )
 
 	/** @group param */
 	final val parallelTransformers = new Param[Seq[Transformer]]( this,
@@ -143,11 +161,27 @@ class ParallelRejoiningPipelines(override val uid: String)
 		// figure out how we're going to join our dataframes
 		val joinFn: (DataFrame,DataFrame) => DataFrame =
 			if( hasJoinCols )
-				(a: DataFrame, b: DataFrame) => a.join(b, $(joinCols))
+				(a: DataFrame, b: DataFrame) => a.join(b, $(joinCols), $(joinType).sql)
 			else
-				(a: DataFrame, b: DataFrame) => a.join(b)
+				(a: DataFrame, b: DataFrame) => {
+					// get common columns as join columns
+					val commonCols = a.schema.intersect(b.schema).map(_.name)
+
+					a.join(b, commonCols, $(joinType).sql)
+				}
 
 		// join everything back together
 		parallelDFs.reduceLeft( joinFn )
 	}
+}
+
+object ParallelRejoiningPipelines
+{
+	def apply( joinCols: Seq[String],
+	           parallelTransformers: Seq[Transformer] ): Transformer =
+		new ParallelRejoiningPipelines().setJoinCols(joinCols)
+		                                .setParallelTransformers(parallelTransformers)
+
+	def apply( parallelTransformers: Seq[Transformer] ): Transformer =
+		new ParallelRejoiningPipelines().setParallelTransformers(parallelTransformers)
 }

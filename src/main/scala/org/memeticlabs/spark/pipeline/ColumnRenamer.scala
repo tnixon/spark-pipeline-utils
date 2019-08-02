@@ -35,6 +35,7 @@ class ColumnRenamer( override val uid: String ) extends Transformer
 	final val colNameMap = new Param[Map[String,String]]( this,
 	                                                      "colNameMap",
 	                                                      "Maps columns to be renamed to their new names" )
+	setDefault( colNameMap, Map[String,String]() )
 
 	/** @group getParam */
 	def getColNameMap: Map[String,String] = $(colNameMap)

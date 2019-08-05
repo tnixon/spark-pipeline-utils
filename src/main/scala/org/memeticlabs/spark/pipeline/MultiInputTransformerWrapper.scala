@@ -25,7 +25,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset}
 
-abstract class SparkMultiInputTransformerWrapper[OUT,T <: SparkMultiInputTransformerWrapper[OUT, T]](override val uid: String)
+abstract class MultiInputTransformerWrapper[OUT,T <: MultiInputTransformerWrapper[OUT, T]]( override val uid: String)
 	extends Transformer with HasOutputCol
 {
 	override def copy( extra: ParamMap ): Transformer = defaultCopy(extra)

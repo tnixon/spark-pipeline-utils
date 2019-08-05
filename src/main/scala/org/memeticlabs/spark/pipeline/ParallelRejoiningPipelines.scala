@@ -20,9 +20,10 @@ package org.memeticlabs.spark.pipeline
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.catalyst.plans.{Inner, JoinType}
+import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Dataset}
+import org.apache.spark.storage.StorageLevel
 
 /**
 	* A class for staging multiple Transformers in parallel
@@ -65,21 +66,20 @@ class ParallelRejoiningPipelines(override val uid: String)
 	final def setJoinCols( cols: Seq[String] ): ParallelRejoiningPipelines.this.type = set( joinCols, cols )
 
 	/** @group param */
-	final val joinType = new Param[JoinType]( this,
+	final val joinType = new Param[String]( this,
 	                                          "joinType",
 	                                          "Type of join to perform between tables" )
-	setDefault( joinType, Inner )
+	setDefault( joinType, "inner" )
 
 	/** @group getParam */
-	final def getJoinType: JoinType = $(joinType)
-
-	/** @group setParam */
-	final def setJoinType( value: JoinType ): ParallelRejoiningPipelines.this.type =
-		set( joinType, value )
+	final def getJoinType: String = $(joinType)
 
 	/** @group setParam */
 	final def setJoinType( value: String ): ParallelRejoiningPipelines.this.type =
-		setJoinType( JoinType(value) )
+	{
+		JoinType(value)
+		set( joinType, value )
+	}
 
 	/** @group param */
 	final val parallelTransformers = new Param[Seq[Transformer]]( this,
@@ -94,6 +94,18 @@ class ParallelRejoiningPipelines(override val uid: String)
 	/** @group setParam */
 	final def setParallelTransformers( tx: Seq[Transformer] ): ParallelRejoiningPipelines.this.type =
 		set( parallelTransformers, tx )
+
+	/** @group param */
+	final val cacheType = new Param[StorageLevel]( this,
+	                                               "cacheType",
+	                                               "Type of caching used to persist the source dataset")
+	setDefault( cacheType, StorageLevel.MEMORY_AND_DISK )
+
+	/** @group getParam */
+	final def getCacheType: StorageLevel = $(cacheType)
+
+	/** @group setParam */
+	final def setCacheType( value: StorageLevel ): ParallelRejoiningPipelines.this.type = set( cacheType, value )
 
 	/** Transform */
 
@@ -121,22 +133,25 @@ class ParallelRejoiningPipelines(override val uid: String)
 			             StructType( a.schema.union(b.schema).toArray ) )
 		}
 
+		def requireJoinCol( ns: NamedSchema, joinCol: String ): Unit =
+		{
+			val fieldNames = ns.schema.fieldNames
+			require( fieldNames.contains(joinCol),
+			         s"Parallel transform results ${ns.txName} don't all contain the join column ${joinCol}, " +
+				         s"available columns include: [${fieldNames.addString(new StringBuilder, ", ")}]" )
+		}
+
 		// function to validate our
 		val joinValidator: (NamedSchema, NamedSchema) => Unit =
 			if( hasJoinCols )
 				( a: NamedSchema, b: NamedSchema) => {
-					// make sure both tables have the join columnns
-					val aColnames = a.schema.fieldNames
-					val bColnames = b.schema.fieldNames
 					$( joinCols ).foreach( col => {
-						require( aColnames.contains( col ),
-						         s"Parallel transform results ${a.txName} don't all contain the join column ${col}" )
-						require( bColnames.contains( col ),
-						         s"Parallel transform results ${b.txName} don't all contain the join column ${col}" )
-					} )
+						requireJoinCol(a,col)
+						requireJoinCol(b,col)
+					})
 					// make sure they don't clobber any other columns
-					val clobberCols = aColnames.diff($(joinCols))
-					                           .intersect(bColnames.diff($(joinCols)))
+					val clobberCols = a.schema.fieldNames.diff($(joinCols))
+					                   .intersect(b.schema.fieldNames.diff($(joinCols)))
 					require( clobberCols.isEmpty,
 					         s"Parallel transform results ${a.txName} and ${b.txName} will clobber non-join columns ${clobberCols}" )
 				}
@@ -150,10 +165,13 @@ class ParallelRejoiningPipelines(override val uid: String)
 		parallelSchemas.reduceLeft( schemaJoiner(joinValidator) ).schema
 	}
 
-	override def transform( ds: Dataset[_] ): DataFrame =
+	override def transform( source: Dataset[_] ): DataFrame =
 	{
 		// transform the schema
-		transformSchema( ds.schema, logging = true )
+		transformSchema( source.schema, logging = true )
+
+		// cache the source
+		val ds = source.persist($(cacheType))
 
 		// apply each transformer to the source
 		val parallelDFs = $(parallelTransformers).map( _.transform(ds) )
@@ -161,13 +179,13 @@ class ParallelRejoiningPipelines(override val uid: String)
 		// figure out how we're going to join our dataframes
 		val joinFn: (DataFrame,DataFrame) => DataFrame =
 			if( hasJoinCols )
-				(a: DataFrame, b: DataFrame) => a.join(b, $(joinCols), $(joinType).sql)
+				(a: DataFrame, b: DataFrame) => a.join(b, $(joinCols), $(joinType) )
 			else
 				(a: DataFrame, b: DataFrame) => {
 					// get common columns as join columns
 					val commonCols = a.schema.intersect(b.schema).map(_.name)
 
-					a.join(b, commonCols, $(joinType).sql)
+					a.join(b, commonCols, $(joinType) )
 				}
 
 		// join everything back together
@@ -182,6 +200,18 @@ object ParallelRejoiningPipelines
 		new ParallelRejoiningPipelines().setJoinCols(joinCols)
 		                                .setParallelTransformers(parallelTransformers)
 
+	def apply( joinCols: Seq[String],
+	           parallelTransformers: Seq[Transformer],
+	           joinType: String ): Transformer =
+		new ParallelRejoiningPipelines().setJoinCols(joinCols)
+		                                .setParallelTransformers(parallelTransformers)
+		                                .setJoinType(joinType)
+
 	def apply( parallelTransformers: Seq[Transformer] ): Transformer =
 		new ParallelRejoiningPipelines().setParallelTransformers(parallelTransformers)
+
+	def apply( parallelTransformers: Seq[Transformer],
+	           joinType: String ): Transformer =
+		new ParallelRejoiningPipelines().setParallelTransformers(parallelTransformers)
+		                                .setJoinType(joinType)
 }

@@ -25,8 +25,8 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset}
 
-abstract class MultiInputTransformerWrapper[OUT,T <: MultiInputTransformerWrapper[OUT, T]]( override val uid: String)
-	extends Transformer with HasOutputCol
+abstract class MultiInputTransformerWrapper[IN <: Product,OUT,T <: MultiInputTransformerWrapper[IN,OUT, T]]( override val uid: String)
+	extends Transformer with HasOutputCol with SparkTransformerWrapper[IN,OUT]
 {
 	override def copy( extra: ParamMap ): Transformer = defaultCopy(extra)
 
@@ -55,7 +55,7 @@ abstract class MultiInputTransformerWrapper[OUT,T <: MultiInputTransformerWrappe
 		* account of the embedded param map. So the param values should be determined solely by the input
 		* param map.
 		*/
-	protected def transformFunc[IN]: IN => OUT
+	protected val transformFunc: IN => OUT = tx.transform
 
 	/**
 		* Returns the data types of the input parameters
@@ -71,6 +71,10 @@ abstract class MultiInputTransformerWrapper[OUT,T <: MultiInputTransformerWrappe
 
 	override def transformSchema( schema: StructType ): StructType =
 	{
+		// make sure we have an input column for each data type
+		require( $(inputCols).size == inputDataTypes.size,
+		         s"Expecting ${inputDataTypes.size} input columns, but found ${$(inputCols).size}")
+
 		// make sure we have all the input columns
 		$(inputCols).zip(inputDataTypes).foreach( input =>
 			                                          schema.find( _.name.equals(input._1) ) match

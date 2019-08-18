@@ -18,6 +18,7 @@
 package org.memeticlabs.spark.pipeline
 
 import org.apache.spark.ml.UnaryTransformer
+import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.DataType
 
 /**
@@ -35,16 +36,25 @@ abstract class UnarySparkTransformerWrapper[IN, OUT]( override val uid: String )
 
 object UnarySparkTransformerWrapper
 {
-	def apply[IN, OUT]
-	( uid: String,
-	  outputType: DataType,
-	  createTx: () => GenericTransformer[IN, OUT] ): UnarySparkTransformerWrapper[IN, OUT] =
-		new UnarySparkTransformerWrapper[IN, OUT]( uid )
+	def apply[IN, OUT]( typeName: String,
+	                    outputType: DataType,
+	                    createTx: () => GenericTransformer[IN, OUT] ): UnarySparkTransformerWrapper[IN, OUT] =
+		new UnarySparkTransformerWrapper[IN, OUT]( Identifiable.randomUID(typeName) )
 		{
 			override protected def outputDataType: DataType = outputType
 
 			override protected def createTransformer: GenericTransformer[IN, OUT] = createTx()
 		}
+
+	def apply[IN, OUT]( typeName: String,
+	                    outputType: DataType,
+	                    transformer: IN => OUT ): UnarySparkTransformerWrapper[IN, OUT] =
+		apply( typeName,
+		       outputType,
+		       () =>
+			       new GenericTransformer[IN,OUT]{
+				       override def transform( in: IN ): OUT = transformer(in)
+			       } )
 
 	def apply[IN, OUT]
 	( outputType: DataType,
@@ -52,4 +62,13 @@ object UnarySparkTransformerWrapper
 		apply[IN, OUT]( classOf[UnarySparkTransformerWrapper[IN, OUT]].getName + " of function " + createTx,
 		                outputType,
 		                createTx )
+
+	def apply[IN, OUT]( outputType: DataType,
+	                    transformer: IN => OUT ): UnarySparkTransformerWrapper[IN,OUT] =
+		apply( outputType,
+		       () =>
+			       new GenericTransformer[IN,OUT]
+			       {
+				       override def transform( in: IN ): OUT = transformer( in )
+			       } )
 }

@@ -20,12 +20,13 @@ package org.memeticlabs.spark.pipeline
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.shared.HasOutputCol
 import org.apache.spark.ml.param.{Param, ParamMap}
+import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset}
 
-abstract class MultiInputTransformerWrapper[IN <: Product,OUT,T <: MultiInputTransformerWrapper[IN,OUT, T]]( override val uid: String)
+abstract class MultiInputTransformerWrapper[IN <: Product,OUT]( override val uid: String)
 	extends Transformer with HasOutputCol with SparkTransformerWrapper[IN,OUT]
 {
 	override def copy( extra: ParamMap ): Transformer = defaultCopy(extra)
@@ -42,13 +43,13 @@ abstract class MultiInputTransformerWrapper[IN <: Product,OUT,T <: MultiInputTra
 	final def getInputCols: Seq[String] = $(inputCols)
 
 	/** @group setParam */
-	final def setInputCols( values: Seq[String] ): T = set(inputCols,values).asInstanceOf[T]
+	final def setInputCols( values: Seq[String] ): this.type = set(inputCols,values)
 
-	final def addInputCol( value: String ): T =
-		set( inputCols, $(inputCols) :+ value ).asInstanceOf[T]
+	final def addInputCol( value: String ): this.type =
+		set( inputCols, $(inputCols) :+ value )
 
 	/** @group setParam */
-	final def setOutput( value: String ): T = set(outputCol,value).asInstanceOf[T]
+	final def setOutput( value: String ): this.type = set(outputCol,value)
 
 	/**
 		* Creates the transform function using the given param map. The input param map already takes
@@ -107,4 +108,48 @@ abstract class MultiInputTransformerWrapper[IN <: Product,OUT,T <: MultiInputTra
 		// apply the UDF to the columns
 		ds.withColumn( $(outputCol), txUDF( $(inputCols).map( col ) :_* ) )
 	}
+}
+
+object MultiInputTransformerWrapper 
+{
+	def apply[IN <: Product,OUT]( typeName: String,
+	                              inputTypes: Seq[DataType],
+	                              outputType: DataType,
+	                              createTx: () => GenericTransformer[IN,OUT] ): MultiInputTransformerWrapper[IN,OUT] =
+		new MultiInputTransformerWrapper[IN,OUT]( Identifiable.randomUID( typeName ) )
+		{
+			override protected def inputDataTypes: Seq[DataType] = inputTypes
+
+			override protected def outputDataType: DataType = outputType
+
+			override protected def createTransformer: GenericTransformer[IN, OUT] = createTx()
+		}
+
+	def apply[IN <: Product,OUT]( typeName: String,
+	                              inputTypes: Seq[DataType],
+	                              outputType: DataType,
+	                              transformer: IN => OUT ): MultiInputTransformerWrapper[IN,OUT] =
+		apply( typeName,
+		       inputTypes,
+		       outputType,
+		       () => new GenericTransformer[IN,OUT] {
+			       override def transform( in: IN ): OUT = transformer(in)
+		       })
+
+	def apply[IN <: Product,OUT]( inputTypes: Seq[DataType],
+	                              outputType: DataType,
+	                              createTx: () => GenericTransformer[IN,OUT] ): MultiInputTransformerWrapper[IN,OUT] =
+		apply( classOf[MultiInputTransformerWrapper[IN, OUT]].getName + " of function " + createTx,
+		       inputTypes,
+		       outputType,
+		       createTx )
+
+	def apply[IN <: Product,OUT]( inputTypes: Seq[DataType],
+	                              outputType: DataType,
+	                              transformer: IN => OUT ): MultiInputTransformerWrapper[IN,OUT] =
+		apply( inputTypes,
+		       outputType,
+		       () => new GenericTransformer[IN,OUT] {
+			       override def transform( in: IN ): OUT = transformer(in)
+		       })
 }

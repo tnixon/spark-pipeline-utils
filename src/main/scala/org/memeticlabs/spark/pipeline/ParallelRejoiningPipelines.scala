@@ -130,7 +130,7 @@ class ParallelRejoiningPipelines(override val uid: String)
 
 			// join the schemas
 			NamedSchema( "( "+ a.txName +" + "+ b.txName +" )",
-			             StructType( a.schema.union(b.schema).toArray ) )
+			             StructType( a.schema.toSet.union(b.schema.toSet).toArray ) )
 		}
 
 		def requireJoinCol( ns: NamedSchema, joinCol: String ): Unit =
@@ -153,10 +153,11 @@ class ParallelRejoiningPipelines(override val uid: String)
 					val clobberCols = a.schema.fieldNames.diff($(joinCols))
 					                   .intersect(b.schema.fieldNames.diff($(joinCols)))
 					require( clobberCols.isEmpty,
-					         s"Parallel transform results ${a.txName} and ${b.txName} will clobber non-join columns ${clobberCols}" )
+					         s"Parallel transform results ${a.txName} and ${b.txName} " +
+					         s"will clobber non-join columns ${clobberCols.addString(new StringBuilder,", ")}" )
 				}
 			else
-				( a: NamedSchema, b: NamedSchema) =>
+				( a: NamedSchema, b: NamedSchema ) =>
 					// make sure that we have common columns to join on
 					require( a.schema.intersect(b.schema).nonEmpty,
 					         s"Parallel transform results ${a.txName} and ${b.txName} have no columns in common" )

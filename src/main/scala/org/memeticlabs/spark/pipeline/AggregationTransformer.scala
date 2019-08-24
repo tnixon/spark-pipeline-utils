@@ -20,7 +20,7 @@ package org.memeticlabs.spark.pipeline
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.expressions.UserDefinedAggregateFunction
+import org.apache.spark.sql.expressions.{UserDefinedAggregateFunction, WindowSpec}
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 import org.apache.spark.sql.{Column, Dataset}
 
@@ -96,9 +96,15 @@ abstract class AggregationTransformer( override val uid: String ) extends Pipeli
 	}
 
 	def toColumn( ds: Dataset[_] ): Column =
-		aggregationFunction( $( inputCols ).map( ds( _ ) ) )
+		aggregationFunction( $(inputCols).map( ds(_) ) )
 			.cast( outputDataType )
-			.as( $( outputCol ) )
+			.as( $(outputCol) )
+
+	def toColumn( ds: Dataset[_], overWindow: WindowSpec ): Column =
+		aggregationFunction( $(inputCols).map( ds(_) ) )
+			.over(overWindow)
+			.cast(outputDataType)
+			.as($(outputCol))
 }
 
 /**

@@ -44,6 +44,7 @@ class AggregationPipeline( override val uid: String ) extends Transformer
 	/** @group param */
 	final val groupCols = new Param[Seq[String]]( this, "groupCols", "Columns to group by" )
 	setDefault( groupCols, Seq() )
+
 	/** @group param */
 	final val aggrStages = new Param[Seq[AggregationTransformer]]( this,
 	                                                               "aggregators",
@@ -60,7 +61,7 @@ class AggregationPipeline( override val uid: String ) extends Transformer
 	final def setGroupCols( values: Seq[String] ): AggregationPipeline.this.type = set( groupCols, values )
 
 	/** @group setParam */
-	final def setAggrStages( values: Seq[AggregationTransformer] ): AggregationPipeline =
+	final def setAggrStages( values: Seq[AggregationTransformer] ): AggregationPipeline.this.type =
 		set( aggrStages, values )
 
 	/** Transform */
@@ -69,7 +70,8 @@ class AggregationPipeline( override val uid: String ) extends Transformer
 	{
 		// validate the parameters
 		require( $( groupCols ) != null && $( groupCols ).nonEmpty, "groupCols must be set!" )
-		require( $( aggrStages ) != null && $( aggrStages ).nonEmpty, "measureCols must be set!" )
+		require( $( aggrStages ) != null && $( aggrStages ).nonEmpty,
+		         "Need to have at least one AggregationTransformer set in aggregators!" )
 
 		// validate the schema
 		$( groupCols ).foreach( col => require( schema.fieldNames.contains( col ),

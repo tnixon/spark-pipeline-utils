@@ -50,6 +50,20 @@ class TransformerPipeline( override val uid: String )
 		new TransformerPipeline().setStages( newStages )
 	}
 
+	def schemaAfter( stage: Int, startingWithSchema: StructType ): StructType =
+	{
+		// check the
+		require( stage > 0, s"stage must be a positive number, got $stage instead")
+		require( stage <= $(stages).size,
+		         s"stage must be no greater than the number of ${getStages.size}, but got $stage instead")
+		// compute the schema after the stage-th stage
+		$(stages).dropRight($(stages).size - stage)
+		         .foldLeft(startingWithSchema)( (schema: StructType, tx: Transformer) => tx.transformSchema(schema) )
+	}
+
+	def schemaAfter( stage: Int, startingWith: Dataset[_] ): StructType =
+		schemaAfter(stage, startingWith.schema)
+
 	override def transformSchema( schema: StructType ): StructType =
 	{
 		val theStages = $( stages )

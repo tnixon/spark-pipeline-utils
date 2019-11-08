@@ -121,17 +121,16 @@ object FunctionTransformerWrapper
    .setOutput( outputColumn )
 
 	def apply[RT: TypeTag]( typeName: String,
-	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: () => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( typeName, Seq(), outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag]( typeName: String,
-	                                     inputColumns: Seq[String],
-	                                     outputColumn: String,
-	                                     f: A1 => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+	                        inputColumn: String,
+	                        outputColumn: String,
+	                        f: A1 => RT ): FunctionTransformerWrapper =
+		apply( typeName, Seq(inputColumn), outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,

@@ -17,28 +17,35 @@
 	*/
 package org.memeticlabs.spark.pipeline
 
+import org.apache.spark.internal.Logging
+import org.apache.spark.ml.Transformer
+import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
 import org.apache.spark.sql.functions.{explode, udf}
 import org.apache.spark.sql.types.{ArrayType, DataType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset}
 
 /**
-	* A [[UnarySparkTransformerWrapper]] that expands (explodes) the rows of a dataset
+	* A [[Transformer]] that expands (explodes) the rows of a dataset
 	*
 	* @param uid Unique ID for this transformer
 	* @tparam IN  Input data type
 	* @tparam OUT Output data type
 	*/
-abstract class ExplodingDataSetTransformer[IN, OUT]( uid: String )
-	extends UnarySparkTransformerWrapper[IN, Seq[OUT]]( uid )
+abstract class ExplodingDataSetTransformer[IN, OUT]( override val uid: String )
+	extends Transformer with HasInputCol with HasOutputCol with Logging
 {
+	override def copy( extra: ParamMap ): Transformer = defaultCopy( extra )
+
 	protected def outputElementType: DataType
 
-	override protected def outputDataType: DataType = ArrayType.apply( outputElementType )
+	protected def outputDataType: DataType = ArrayType.apply( outputElementType )
+
+	protected val transformer: IN => Seq[OUT]
 
 	override def transformSchema( schema: StructType ): StructType =
 	{
 		val inputType = schema( $( inputCol ) ).dataType
-		validateInputType( inputType )
 		if (schema.fieldNames.contains( $( outputCol ) )) {
 			throw new IllegalArgumentException( s"Output column ${$( outputCol )} already exists." )
 		}
@@ -50,7 +57,7 @@ abstract class ExplodingDataSetTransformer[IN, OUT]( uid: String )
 	override def transform( dataset: Dataset[_] ): DataFrame =
 	{
 		transformSchema( dataset.schema, logging = true )
-		val transformUDF = udf( this.createTransformFunc, outputDataType )
+		val transformUDF = udf( this.transformer, outputDataType )
 		dataset.withColumn( $( outputCol ), explode( transformUDF( dataset( $( inputCol ) ) ) ) )
 	}
 }
@@ -63,19 +70,19 @@ object ExplodingDataSetTransformer
 	def apply[IN, OUT]
 	( uid: String,
 	  elementType: DataType,
-	  createTx: () => GenericTransformer[IN, Seq[OUT]] ): ExplodingDataSetTransformer[IN, OUT] =
+	  tx: IN => Seq[OUT] ): ExplodingDataSetTransformer[IN, OUT] =
 		new ExplodingDataSetTransformer[IN, OUT]( uid )
 		{
 			override protected def outputElementType: DataType = elementType
 
-			override protected def createTransformer: GenericTransformer[IN, Seq[OUT]] = createTx()
+			override protected val transformer: IN => Seq[OUT] = tx
 		}
 
 	def apply[IN, OUT]
 	( elementType: DataType,
-	  createTx: () => GenericTransformer[IN, Seq[OUT]] ): ExplodingDataSetTransformer[IN, OUT] =
-		apply[IN, OUT]( classOf[ExplodingDataSetTransformer[IN, OUT]].getName + " of function " + createTx,
+	  tx: IN => Seq[OUT] ): ExplodingDataSetTransformer[IN, OUT] =
+		apply[IN, OUT]( classOf[ExplodingDataSetTransformer[IN, OUT]].getName + " of function " + tx,
 		                elementType,
-		                createTx )
+		                tx )
 
 }

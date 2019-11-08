@@ -15,7 +15,7 @@
 	*
 	* Created by Tristan Nixon <tristan.m.nixon@gmail.com> on 9/5/16.
 	*/
-package org.memeticlabs.spark.pipeline
+package org.memeticlabs.spark.ml.utils.pipelines
 
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{Param, ParamMap}

@@ -15,7 +15,7 @@
 	*
 	* Created by Tristan Nixon <tristan.m.nixon@gmail.com> on 9/10/16
 	*/
-package org.memeticlabs.spark.pipeline
+package org.memeticlabs.spark.ml.utils.transformers
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.ml.Transformer
@@ -36,6 +36,12 @@ abstract class ExplodingDataSetTransformer[IN, OUT]( override val uid: String )
 	extends Transformer with HasInputCol with HasOutputCol with Logging
 {
 	override def copy( extra: ParamMap ): Transformer = defaultCopy( extra )
+
+	/** @group setParam */
+	def setInputCol(value: String): ExplodingDataSetTransformer.this.type = set(inputCol, value)
+
+	/** @group setParam */
+	def setOutputCol(value: String): ExplodingDataSetTransformer.this.type = set(outputCol, value)
 
 	protected def outputElementType: DataType
 
@@ -70,19 +76,26 @@ object ExplodingDataSetTransformer
 	def apply[IN, OUT]
 	( uid: String,
 	  elementType: DataType,
+	  inputCol: String,
+	  outputCol: String,
 	  tx: IN => Seq[OUT] ): ExplodingDataSetTransformer[IN, OUT] =
 		new ExplodingDataSetTransformer[IN, OUT]( uid )
 		{
 			override protected def outputElementType: DataType = elementType
 
 			override protected val transformer: IN => Seq[OUT] = tx
-		}
+		}.setInputCol(inputCol)
+		 .setOutputCol(outputCol)
 
 	def apply[IN, OUT]
 	( elementType: DataType,
+	  inputCol: String,
+	  outputCol: String,
 	  tx: IN => Seq[OUT] ): ExplodingDataSetTransformer[IN, OUT] =
 		apply[IN, OUT]( classOf[ExplodingDataSetTransformer[IN, OUT]].getName + " of function " + tx,
 		                elementType,
+		                inputCol,
+		                outputCol,
 		                tx )
 
 }

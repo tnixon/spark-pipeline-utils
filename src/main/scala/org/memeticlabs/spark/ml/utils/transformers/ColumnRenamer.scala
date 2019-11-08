@@ -15,7 +15,7 @@
 	*
 	* Created by Tristan Nixon on 2019-02-10.
 	*/
-package org.memeticlabs.spark.pipeline
+package org.memeticlabs.spark.ml.utils.transformers
 
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{Param, ParamMap}
@@ -68,4 +68,14 @@ class ColumnRenamer( override val uid: String ) extends Transformer
 
 	override def transform( dataset: Dataset[_] ): DataFrame =
 		$(colNameMap).foldLeft(dataset.toDF())( rename )
+}
+
+object ColumnRenamer
+{
+	def apply( columnNameMap: Map[String,String] ): ColumnRenamer =
+		new ColumnRenamer().setColNameMap(columnNameMap)
+
+	def apply( columnNameMappings: (String,String)* ): ColumnRenamer =
+		columnNameMappings.foldLeft( new ColumnRenamer() )( (renamer, mapping) =>
+			                                                    renamer.withColumnRenamed( mapping._1, mapping._2 ) )
 }

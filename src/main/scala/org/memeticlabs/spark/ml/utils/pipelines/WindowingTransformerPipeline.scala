@@ -15,7 +15,7 @@
  *
  * Created by Tristan Nixon on 2019-08-22.
  */
-package org.memeticlabs.spark.pipeline
+package org.memeticlabs.spark.ml.utils.pipelines
 
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{Param, ParamMap}
@@ -26,7 +26,7 @@ import org.apache.spark.sql.{Column, DataFrame, Dataset}
 
 case class WindowRange( start: Long, end: Long )
 
-class WindowFunctionPipeline( override val uid: String )
+class WindowingTransformerPipeline( override val uid: String )
 	extends Transformer
 {
 	def this() = this( Identifiable.randomUID("WindowFunctionPipeline" ) )
@@ -36,16 +36,16 @@ class WindowFunctionPipeline( override val uid: String )
 	/** Params */
 
 	/** @group param */
-	final val aggrStages = new Param[Seq[AggregationTransformer]]( this,
-	                                                               "aggregators",
-	                                                               "Mappings binding input and output columns to Aggregators" )
+	final val aggrStages = new Param[Seq[AggregationStage]]( this,
+	                                                         "aggregators",
+	                                                         "Mappings binding input and output columns to Aggregators" )
 	setDefault( aggrStages, Seq() )
 
 	/** @group getParam */
-	final def getAggrStages: Seq[AggregationTransformer] = $( aggrStages )
+	final def getAggrStages: Seq[AggregationStage] = $( aggrStages )
 
 	/** @group setParam */
-	final def setAggrStages( values: Seq[AggregationTransformer] ): this.type =
+	final def setAggrStages( values: Seq[AggregationStage] ): this.type =
 		set( aggrStages, values )
 
 	/** @group param */
@@ -193,92 +193,92 @@ class WindowFunctionPipeline( override val uid: String )
 	}
 }
 
-object WindowFunctionPipeline
+object WindowingTransformerPipeline
 {
 	def apply( typeName: String,
-	           aggregations: Seq[AggregationTransformer],
+	           aggregations: Seq[AggregationStage],
 	           partitionCols: Seq[String],
 	           orderCols: Seq[String],
 	           rangeStart: Long,
-	           rangeEnd: Long ): WindowFunctionPipeline =
-		new WindowFunctionPipeline( Identifiable.randomUID(typeName) )
+	           rangeEnd: Long ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline( Identifiable.randomUID( typeName ) )
 			.setAggrStages(aggregations)
 			.setPartitionCols(partitionCols)
 			.setOrderCols(orderCols)
 			.setRangeBetweenRange( WindowRange( rangeStart, rangeEnd ) )
 
-	def apply( aggregations: Seq[AggregationTransformer],
+	def apply( aggregations: Seq[AggregationStage],
 	           partitionCols: Seq[String],
 	           orderCols: Seq[String],
 	           rangeStart: Long,
-	           rangeEnd: Long ): WindowFunctionPipeline =
-		new WindowFunctionPipeline()
+	           rangeEnd: Long ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline()
 			.setAggrStages(aggregations)
 			.setPartitionCols(partitionCols)
 			.setOrderCols(orderCols)
 			.setRangeBetweenRange( WindowRange( rangeStart, rangeEnd ) )
 
 	def apply( typeName: String,
-	           aggregations: Seq[AggregationTransformer],
+	           aggregations: Seq[AggregationStage],
 	           partitionCols: Seq[String],
-	           orderCols: Seq[String] ): WindowFunctionPipeline =
-		new WindowFunctionPipeline( Identifiable.randomUID(typeName) )
+	           orderCols: Seq[String] ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline( Identifiable.randomUID( typeName ) )
 			.setAggrStages(aggregations)
 			.setPartitionCols(partitionCols)
 			.setOrderCols(orderCols)
 
-	def apply( aggregations: Seq[AggregationTransformer],
+	def apply( aggregations: Seq[AggregationStage],
 	           partitionCols: Seq[String],
-	           orderCols: Seq[String] ): WindowFunctionPipeline =
-		new WindowFunctionPipeline()
+	           orderCols: Seq[String] ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline()
 			.setAggrStages(aggregations)
 			.setPartitionCols(partitionCols)
 			.setOrderCols(orderCols)
 
 	def apply( typeName: String,
-	           aggregations: Seq[AggregationTransformer],
-	           partitionCols: Seq[String] ): WindowFunctionPipeline =
-		new WindowFunctionPipeline( Identifiable.randomUID(typeName) )
+	           aggregations: Seq[AggregationStage],
+	           partitionCols: Seq[String] ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline( Identifiable.randomUID( typeName ) )
 			.setAggrStages(aggregations)
 			.setPartitionCols(partitionCols)
 
-	def apply( aggregations: Seq[AggregationTransformer],
-	           partitionCols: Seq[String] ): WindowFunctionPipeline =
-		new WindowFunctionPipeline()
+	def apply( aggregations: Seq[AggregationStage],
+	           partitionCols: Seq[String] ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline()
 			.setAggrStages(aggregations)
 			.setPartitionCols(partitionCols)
 
 	def apply( typeName: String,
-	           aggregations: Seq[AggregationTransformer],
+	           aggregations: Seq[AggregationStage],
 	           partitionCols: Seq[String],
 	           rowsStart: Long,
-	           rowsEnd: Long  ): WindowFunctionPipeline =
-		new WindowFunctionPipeline( Identifiable.randomUID(typeName) )
+	           rowsEnd: Long  ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline( Identifiable.randomUID( typeName ) )
 			.setAggrStages(aggregations)
 			.setPartitionCols(partitionCols)
 			.setRowsBetweenRange( WindowRange( rowsStart, rowsEnd ) )
 
-	def apply( aggregations: Seq[AggregationTransformer],
+	def apply( aggregations: Seq[AggregationStage],
 	           partitionCols: Seq[String],
 	           rowsStart: Long,
-	           rowsEnd: Long  ): WindowFunctionPipeline =
-		new WindowFunctionPipeline()
+	           rowsEnd: Long  ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline()
 			.setAggrStages(aggregations)
 			.setPartitionCols(partitionCols)
 			.setRowsBetweenRange( WindowRange( rowsStart, rowsEnd ) )
 
 	def apply( typeName: String,
-	           aggregations: Seq[AggregationTransformer],
+	           aggregations: Seq[AggregationStage],
 	           rowsStart: Long,
-	           rowsEnd: Long  ): WindowFunctionPipeline =
-		new WindowFunctionPipeline( Identifiable.randomUID(typeName) )
+	           rowsEnd: Long  ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline( Identifiable.randomUID( typeName ) )
 			.setAggrStages(aggregations)
 			.setRowsBetweenRange( WindowRange( rowsStart, rowsEnd ) )
 
-	def apply( aggregations: Seq[AggregationTransformer],
+	def apply( aggregations: Seq[AggregationStage],
 	           rowsStart: Long,
-	           rowsEnd: Long  ): WindowFunctionPipeline =
-		new WindowFunctionPipeline()
+	           rowsEnd: Long  ): WindowingTransformerPipeline =
+		new WindowingTransformerPipeline()
 			.setAggrStages(aggregations)
 			.setRowsBetweenRange( WindowRange( rowsStart, rowsEnd ) )
 }

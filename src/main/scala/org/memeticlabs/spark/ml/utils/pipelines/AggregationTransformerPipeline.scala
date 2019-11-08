@@ -15,27 +15,22 @@
 	*
 	* Created by Tristan Nixon <tristan.m.nixon@gmail.com> on 10/10/16.
 	*/
-package org.memeticlabs.spark.pipeline
+package org.memeticlabs.spark.ml.utils.pipelines
 
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.types.{StructField, StructType}
-import org.apache.spark.sql.{Column, DataFrame, Dataset}
-
-/**
-	* A simple type for organizing aggregators and their corresponding output types
-	*/
-case class AggregatorMapping( output: StructField, aggregator: Column )
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{DataFrame, Dataset}
 
 /**
 	* A Pipeline component that enables a sequence of AggregationTransformers
 	*
 	* @param uid unique ID of this Transformer
 	*/
-class AggregationPipeline( override val uid: String ) extends Transformer
+class AggregationTransformerPipeline( override val uid: String ) extends Transformer
 {
-	def this( ) = this( Identifiable.randomUID( "AggregationPipeline" ) )
+	def this() = this( Identifiable.randomUID( "AggregationPipeline" ) )
 
 	override def copy( extra: ParamMap ): Transformer = defaultCopy( extra )
 
@@ -46,22 +41,22 @@ class AggregationPipeline( override val uid: String ) extends Transformer
 	setDefault( groupCols, Seq() )
 
 	/** @group param */
-	final val aggrStages = new Param[Seq[AggregationTransformer]]( this,
-	                                                               "aggregators",
-	                                                               "Mappings binding input and output columns to Aggregators" )
+	final val aggrStages = new Param[Seq[AggregationStage]]( this,
+	                                                         "aggregators",
+	                                                         "Mappings binding input and output columns to Aggregators" )
 	setDefault( aggrStages, Seq() )
 
 	/** @group getParam */
 	final def getGroupCols: Seq[String] = $( groupCols )
 
 	/** @group getParam */
-	final def getAggrStages: Seq[AggregationTransformer] = $( aggrStages )
+	final def getAggrStages: Seq[AggregationStage] = $( aggrStages )
 
 	/** @group setParam */
-	final def setGroupCols( values: Seq[String] ): AggregationPipeline.this.type = set( groupCols, values )
+	final def setGroupCols( values: Seq[String] ): AggregationTransformerPipeline.this.type = set( groupCols, values )
 
 	/** @group setParam */
-	final def setAggrStages( values: Seq[AggregationTransformer] ): AggregationPipeline.this.type =
+	final def setAggrStages( values: Seq[AggregationStage] ): AggregationTransformerPipeline.this.type =
 		set( aggrStages, values )
 
 	/** Transform */
@@ -104,17 +99,17 @@ class AggregationPipeline( override val uid: String ) extends Transformer
 /**
 	* Factory methods for building AggregationPipelines
 	*/
-object AggregationPipeline
+object AggregationTransformerPipeline
 {
-	def apply( groupBy: Seq[String], aggregators: Seq[AggregationTransformer] ): AggregationPipeline =
-		new AggregationPipeline().setGroupCols( groupBy ).setAggrStages( aggregators )
+	def apply( groupBy: Seq[String], aggregators: Seq[AggregationStage] ): AggregationTransformerPipeline =
+		new AggregationTransformerPipeline().setGroupCols( groupBy ).setAggrStages( aggregators )
 
-	def apply( groupBy: String, aggregators: Seq[AggregationTransformer] ): AggregationPipeline =
+	def apply( groupBy: String, aggregators: Seq[AggregationStage] ): AggregationTransformerPipeline =
 		apply( Seq( groupBy ), aggregators )
 
-	def apply( groupBy: Seq[String], aggregator: AggregationTransformer ): AggregationPipeline =
+	def apply( groupBy: Seq[String], aggregator: AggregationStage ): AggregationTransformerPipeline =
 		apply( groupBy, Seq( aggregator ) )
 
-	def apply( groupBy: String, aggregator: AggregationTransformer ): AggregationPipeline =
+	def apply( groupBy: String, aggregator: AggregationStage ): AggregationTransformerPipeline =
 		apply( Seq( groupBy ), Seq( aggregator ) )
 }

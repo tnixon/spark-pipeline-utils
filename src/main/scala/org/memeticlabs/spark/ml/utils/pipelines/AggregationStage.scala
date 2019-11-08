@@ -15,7 +15,7 @@
 	*
 	* Created by Tristan Nixon <tristan.m.nixon@gmail.com> on 10/26/16.
 	*/
-package org.memeticlabs.spark.pipeline
+package org.memeticlabs.spark.ml.utils.pipelines
 
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.param.{Param, ParamMap}
@@ -27,7 +27,7 @@ import org.apache.spark.sql.{Column, Dataset}
 /**
 	* Framework for doing arbitrary aggregations in a Spark ML Pipeline
 	*/
-abstract class AggregationTransformer( override val uid: String ) extends PipelineStage
+abstract class AggregationStage( override val uid: String ) extends PipelineStage
 {
 	def this( ) = this( Identifiable.randomUID( "AggregationTransformer" ) )
 
@@ -57,14 +57,14 @@ abstract class AggregationTransformer( override val uid: String ) extends Pipeli
 		* @param values
 		* @return
 		*/
-	def setInputCols( values: Seq[String] ): AggregationTransformer.this.type = set( inputCols, values )
+	def setInputCols( values: Seq[String] ): AggregationStage.this.type = set( inputCols, values )
 
 	/**
 		* @group setParam
 		* @param value
 		* @return
 		*/
-	def setOutputCol( value: String ): AggregationTransformer.this.type = set( outputCol, value )
+	def setOutputCol( value: String ): AggregationStage.this.type = set( outputCol, value )
 
 	override def copy( extra: ParamMap ): PipelineStage = defaultCopy( extra )
 
@@ -110,7 +110,7 @@ abstract class AggregationTransformer( override val uid: String ) extends Pipeli
 /**
 	* Helper methods to construct Aggregation transformers
 	*/
-object AggregationTransformer
+object AggregationStage
 {
 	/**
 		* Generate a transformer for a simple aggregation expression
@@ -124,8 +124,8 @@ object AggregationTransformer
 	def apply( inputCols: Seq[String],
 	           outputCol: String,
 	           outputType: DataType,
-	           aggFn: Seq[Column] => Column ): AggregationTransformer =
-		new AggregationTransformer()
+	           aggFn: Seq[Column] => Column ): AggregationStage =
+		new AggregationStage()
 		{
 			override def aggregationFunction: Seq[Column] => Column = aggFn
 
@@ -145,7 +145,7 @@ object AggregationTransformer
 	def apply( inputCol: String,
 	           outputCol: String,
 	           outputType: DataType,
-	           aggFn: Column => Column ): AggregationTransformer =
+	           aggFn: Column => Column ): AggregationStage =
 		apply( Seq( inputCol ), outputCol, outputType, ( in: Seq[Column] ) => aggFn( in.head ) )
 
 	/**
@@ -157,8 +157,8 @@ object AggregationTransformer
 		*/
 	def apply( inputCols: Seq[String],
 	           outputCol: String,
-	           udaf: UserDefinedAggregateFunction ): AggregationTransformer =
-		new AggregationTransformer( Identifiable.randomUID( udaf.getClass.getSimpleName + "_asTransformer" ) )
+	           udaf: UserDefinedAggregateFunction ): AggregationStage =
+		new AggregationStage( Identifiable.randomUID( udaf.getClass.getSimpleName + "_asTransformer" ) )
 		{
 			override def aggregationFunction: Seq[Column] => Column = udaf.apply
 
@@ -175,6 +175,6 @@ object AggregationTransformer
 		*/
 	def apply( inputCol: String,
 	           outputCol: String,
-	           udaf: UserDefinedAggregateFunction ): AggregationTransformer =
+	           udaf: UserDefinedAggregateFunction ): AggregationStage =
 		apply( Seq( inputCol ), outputCol, udaf )
 }

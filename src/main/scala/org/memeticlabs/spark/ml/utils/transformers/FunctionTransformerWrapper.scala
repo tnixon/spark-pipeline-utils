@@ -15,7 +15,7 @@
  *
  * Created by Tristan Nixon on 2019-08-02.
  */
-package org.memeticlabs.spark.pipeline
+package org.memeticlabs.spark.ml.utils.transformers
 
 import scala.reflect.runtime.universe.TypeTag
 

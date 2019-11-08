@@ -15,7 +15,7 @@
 	*
 	* Created by Tristan Nixon <tristan.m.nixon@gmail.com> on 10/5/16.
 	*/
-package org.memeticlabs.spark.pipeline
+package org.memeticlabs.spark.ml.utils.transformers
 
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{Param, ParamMap}
@@ -33,13 +33,13 @@ abstract class AbstractColumnSelector( override val uid: String ) extends Transf
 	// Params
 
 	/** @group param */
-	val colNames = new Param[Array[String]]( this, "colNames", "Names of columns" )
+	val colNames = new Param[Seq[String]]( this, "colNames", "Names of columns" )
 
 	/** @group getParam */
-	def getColNames: Array[String] = $( colNames )
+	def getColNames: Seq[String] = $( colNames )
 
 	/** @group setParam */
-	def setColNames( cols: Array[String] ): AbstractColumnSelector.this.type = set( colNames, cols )
+	def setColNames( cols: Seq[String] ): AbstractColumnSelector.this.type = set( colNames, cols )
 }
 
 /**
@@ -49,7 +49,7 @@ abstract class AbstractColumnSelector( override val uid: String ) extends Transf
 	*/
 class ColumnSelector( uid: String ) extends AbstractColumnSelector( uid )
 {
-	def this( ) = this( Identifiable.randomUID( "ColumnSelector" ) )
+	def this() = this( Identifiable.randomUID( "ColumnSelector" ) )
 
 	override def transformSchema( schema: StructType ): StructType =
 	{
@@ -64,6 +64,12 @@ class ColumnSelector( uid: String ) extends AbstractColumnSelector( uid )
 		val cols = $( colNames ).map( col => dataset( col ) )
 		dataset.select( cols: _* )
 	}
+}
+
+object ColumnSelector
+{
+	def apply( columns: Seq[String] ): ColumnSelector =
+		new ColumnSelector().setColNames(columns)
 }
 
 /**
@@ -87,4 +93,10 @@ class ColumnDropper( uid: String ) extends AbstractColumnSelector( uid )
 		transformSchema( dataset.schema, logging = true )
 		$( colNames ).foldLeft( dataset.toDF )( ( cur, col ) => cur.drop( col ) )
 	}
+}
+
+object ColumnDropper
+{
+	def apply( columns: Seq[String] ): ColumnDropper =
+		new ColumnDropper().setColNames(columns)
 }

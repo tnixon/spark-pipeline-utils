@@ -68,7 +68,7 @@ class ColumnSelector( uid: String ) extends AbstractColumnSelector( uid )
 
 object ColumnSelector
 {
-	def apply( columns: Seq[String] ): ColumnSelector =
+	def apply( columns: String* ): ColumnSelector =
 		new ColumnSelector().setColNames(columns)
 }
 
@@ -97,6 +97,6 @@ class ColumnDropper( uid: String ) extends AbstractColumnSelector( uid )
 
 object ColumnDropper
 {
-	def apply( columns: Seq[String] ): ColumnDropper =
+	def apply( columns: String* ): ColumnDropper =
 		new ColumnDropper().setColNames(columns)
 }

@@ -101,15 +101,9 @@ class AggregationTransformerPipeline( override val uid: String ) extends Transfo
 	*/
 object AggregationTransformerPipeline
 {
-	def apply( groupBy: Seq[String], aggregators: Seq[AggregationStage] ): AggregationTransformerPipeline =
+	def apply( groupBy: Seq[String], aggregators: AggregationStage* ): AggregationTransformerPipeline =
 		new AggregationTransformerPipeline().setGroupCols( groupBy ).setAggrStages( aggregators )
 
-	def apply( groupBy: String, aggregators: Seq[AggregationStage] ): AggregationTransformerPipeline =
-		apply( Seq( groupBy ), aggregators )
-
-	def apply( groupBy: Seq[String], aggregator: AggregationStage ): AggregationTransformerPipeline =
-		apply( groupBy, Seq( aggregator ) )
-
-	def apply( groupBy: String, aggregator: AggregationStage ): AggregationTransformerPipeline =
-		apply( Seq( groupBy ), Seq( aggregator ) )
+	def apply( groupBy: String, aggregators: AggregationStage* ): AggregationTransformerPipeline =
+		new AggregationTransformerPipeline().setGroupCols( Seq( groupBy ) ).setAggrStages( aggregators )
 }

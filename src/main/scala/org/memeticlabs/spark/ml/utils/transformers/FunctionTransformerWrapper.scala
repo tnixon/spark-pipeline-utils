@@ -110,65 +110,65 @@ abstract class FunctionTransformerWrapper( override val uid: String )
 
 object FunctionTransformerWrapper
 {
-	def apply( typeName: String,
+	def apply( txId: String,
 	           inputColumns: Seq[String],
 	           outputColumn: String,
 	           txUDF: UserDefinedFunction ): FunctionTransformerWrapper =
-		new FunctionTransformerWrapper( Identifiable.randomUID( typeName ) )
+		new FunctionTransformerWrapper( Identifiable.randomUID( txId ) )
 	{
 		override protected val transformerUDF: UserDefinedFunction = txUDF
 	}.setInputCols( inputColumns )
    .setOutput( outputColumn )
 
-	def apply[RT: TypeTag]( typeName: String,
+	def apply[RT: TypeTag]( txId: String,
 	                        outputColumn: String,
 	                        f: () => RT ): FunctionTransformerWrapper =
-		apply( typeName, Seq(), outputColumn, udf( f ) )
+		apply( txId, Seq(), outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
-	          A1: TypeTag]( typeName: String,
+	          A1: TypeTag]( txId: String,
 	                        inputColumn: String,
 	                        outputColumn: String,
 	                        f: A1 => RT ): FunctionTransformerWrapper =
-		apply( typeName, Seq(inputColumn), outputColumn, udf( f ) )
+		apply( txId, Seq(inputColumn), outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
-	          A2: TypeTag]( typeName: String,
+	          A2: TypeTag]( txId: String,
 	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: (A1, A2) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
 	          A2: TypeTag,
-	          A3: TypeTag]( typeName: String,
+	          A3: TypeTag]( txId: String,
 	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: (A1, A2, A3) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
 	          A2: TypeTag,
 	          A3: TypeTag,
-	          A4: TypeTag]( typeName: String,
+	          A4: TypeTag]( txId: String,
 	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: (A1, A2, A3, A4) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
 	          A2: TypeTag,
 	          A3: TypeTag,
 	          A4: TypeTag,
-	          A5: TypeTag]( typeName: String,
+	          A5: TypeTag]( txId: String,
 	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: (A1, A2, A3, A4, A5) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
@@ -176,11 +176,11 @@ object FunctionTransformerWrapper
 	          A3: TypeTag,
 	          A4: TypeTag,
 	          A5: TypeTag,
-	          A6: TypeTag]( typeName: String,
+	          A6: TypeTag]( txId: String,
 	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: (A1, A2, A3, A4, A5, A6) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
@@ -189,11 +189,11 @@ object FunctionTransformerWrapper
 	          A4: TypeTag,
 	          A5: TypeTag,
 	          A6: TypeTag,
-	          A7: TypeTag]( typeName: String,
+	          A7: TypeTag]( txId: String,
 	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: (A1, A2, A3, A4, A5, A6, A7) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
@@ -203,11 +203,11 @@ object FunctionTransformerWrapper
 	          A5: TypeTag,
 	          A6: TypeTag,
 	          A7: TypeTag,
-	          A8: TypeTag]( typeName: String,
+	          A8: TypeTag]( txId: String,
 	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: (A1, A2, A3, A4, A5, A6, A7, A8) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
@@ -218,11 +218,11 @@ object FunctionTransformerWrapper
 	          A6: TypeTag,
 	          A7: TypeTag,
 	          A8: TypeTag,
-	          A9: TypeTag]( typeName: String,
+	          A9: TypeTag]( txId: String,
 	                        inputColumns: Seq[String],
 	                        outputColumn: String,
 	                        f: (A1, A2, A3, A4, A5, A6, A7, A8, A9) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 
 	def apply[RT: TypeTag,
 	          A1: TypeTag,
@@ -234,9 +234,9 @@ object FunctionTransformerWrapper
 	          A7: TypeTag,
 	          A8: TypeTag,
 	          A9: TypeTag,
-	          A10: TypeTag]( typeName: String,
+	          A10: TypeTag]( txId: String,
 	                         inputColumns: Seq[String],
 	                         outputColumn: String,
 	                         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => RT ): FunctionTransformerWrapper =
-		apply( typeName, inputColumns, outputColumn, udf( f ) )
+		apply( txId, inputColumns, outputColumn, udf( f ) )
 }

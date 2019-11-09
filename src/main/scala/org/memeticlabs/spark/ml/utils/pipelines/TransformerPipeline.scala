@@ -34,14 +34,14 @@ class TransformerPipeline( override val uid: String )
 	def this( ) = this( Identifiable.randomUID( "TransformerPipeline" ) )
 
 	/** @group param */
-	val stages: Param[Array[Transformer]] = new Param( this, "stages", "stages of the pipeline" )
+	val stages: Param[Seq[Transformer]] = new Param( this, "stages", "stages of the pipeline" )
 
 	/** @group setParam */
-	def setStages( value: Array[Transformer] ): TransformerPipeline.this.type =
-		set( stages, value.asInstanceOf[Array[Transformer]] )
+	def setStages( value: Seq[Transformer] ): TransformerPipeline.this.type =
+		set( stages, value.asInstanceOf[Seq[Transformer]] )
 
 	/** @group getParam */
-	def getStages: Array[Transformer] = $( stages ).clone()
+	def getStages: Seq[Transformer] = $( stages )
 
 	override def copy( extra: ParamMap ): TransformerPipeline =
 	{
@@ -80,6 +80,6 @@ class TransformerPipeline( override val uid: String )
 
 object TransformerPipeline
 {
-	def apply( transformers: Array[Transformer] ): TransformerPipeline =
+	def apply( transformers: Transformer* ): TransformerPipeline =
 		new TransformerPipeline().setStages( transformers )
 }

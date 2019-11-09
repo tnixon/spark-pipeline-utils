@@ -93,7 +93,7 @@ This transformer allows you to select out only specific columns from a **DataFra
 ```scala
 import org.memeticlabs.spark.ml.utils.transformers.ColumnSelector
 
-val selector = ColumnSelector( Seq( "ColumnA", "ColumnB" ) )
+val selector = ColumnSelector( "ColumnA", "ColumnB" )
 ```
 
 #### ColumnDropper
@@ -103,7 +103,7 @@ This transformer allows you to drop only specific columns from a **DataFrame**.
 ```scala
 import org.memeticlabs.spark.ml.utils.transformers.ColumnDropper
 
-val dropper = ColumnDropper( Seq( "ColumnA", "ColumnB" ) )
+val dropper = ColumnDropper( "ColumnA", "ColumnB" )
 ```
 
 #### ColumnRenamer
@@ -135,7 +135,7 @@ val stage2: Transformer = ???
 val stage3: Transformer = ???
 val stage4: Transformer = ???
 
-val transformerPipeline = TransformerPipeline( Array( stage1, stage2, stage3, stage4 ) )
+val transformerPipeline = TransformerPipeline( stage1, stage2, stage3, stage4 )
 
 val transformed = transformerPipeline.transform( df )
 ```
@@ -180,7 +180,7 @@ import org.memeticlabs.spark.ml.utils.pipelines.AggregationTransformerPipeline
 val meanStage = AggregationStage( "inputColName", "meanColName", DoubleType, (vals: Column) => avg(vals) )
 val varStage = AggregationStage( "inputColName", "varColName", DoubleType, (vals: Column) => variance(vals) )
 
-val meanVarianceTransformer = AggregationTransformerPipeline( "idColName", Seq( meanStage, varStage ) )
+val meanVarianceTransformer = AggregationTransformerPipeline( "idColName", meanStage, varStage )
 ```
 
 #### WindowingTransformerPipeline
@@ -223,9 +223,8 @@ import org.memeticlabs.spark.ml.utils.pipelines.ParallelRejoiningPipelines
 val meanStage = AggregationStage( "inputColName", "meanColName", DoubleType, (vals: Column) => avg(vals) )
 val varStage = AggregationStage( "inputColName", "varColName", DoubleType, (vals: Column) => variance(vals) )
 
-val idAggr = AggregationTransformerPipeline( "idColName", Seq( meanStage, varStage ) )
-val groupAggr = AggregationTransformerPipeline( Seq("idColName", "groupColName"),
-                                                Seq( meanStage, varStage ) )
+val idAggr = AggregationTransformerPipeline( "idColName", meanStage, varStage )
+val groupAggr = AggregationTransformerPipeline( Seq("idColName", "groupColName"), meanStage, varStage )
 
 val rollup = ParallelRejoiningPipelines( Seq( "idColName" ),
                                          Seq( idAggr, groupAggr ),

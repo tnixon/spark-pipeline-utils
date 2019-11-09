@@ -196,23 +196,22 @@ class ParallelRejoiningPipelines(override val uid: String)
 
 object ParallelRejoiningPipelines
 {
-	def apply( joinCols: Seq[String],
-	           parallelTransformers: Seq[Transformer] ): Transformer =
+	def apply( joinCols: Seq[String], parallelTransformers: Seq[Transformer] ): ParallelRejoiningPipelines =
 		new ParallelRejoiningPipelines().setJoinCols(joinCols)
 		                                .setParallelTransformers(parallelTransformers)
 
 	def apply( joinCols: Seq[String],
 	           parallelTransformers: Seq[Transformer],
-	           joinType: String ): Transformer =
+	           joinType: String ): ParallelRejoiningPipelines =
 		new ParallelRejoiningPipelines().setJoinCols(joinCols)
 		                                .setParallelTransformers(parallelTransformers)
 		                                .setJoinType(joinType)
 
-	def apply( parallelTransformers: Seq[Transformer] ): Transformer =
+	def apply( parallelTransformers: Transformer* ): ParallelRejoiningPipelines =
 		new ParallelRejoiningPipelines().setParallelTransformers(parallelTransformers)
 
 	def apply( parallelTransformers: Seq[Transformer],
-	           joinType: String ): Transformer =
+	           joinType: String ): ParallelRejoiningPipelines =
 		new ParallelRejoiningPipelines().setParallelTransformers(parallelTransformers)
 		                                .setJoinType(joinType)
 }
